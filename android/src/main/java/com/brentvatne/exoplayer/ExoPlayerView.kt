@@ -39,7 +39,7 @@ class ExoPlayerView @JvmOverloads constructor(context: Context, attrs: Attribute
     private val playerView = PlayerView(context).apply {
         layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
         setShutterBackgroundColor(Color.TRANSPARENT)
-        useController = true
+        useController = false
         controllerAutoShow = true
         controllerHideOnTouch = true
         controllerShowTimeoutMs = 5000
