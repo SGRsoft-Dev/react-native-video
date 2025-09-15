@@ -2,6 +2,7 @@ public struct DRMParams {
     public let type: String?
     public let licenseServer: String?
     public let headers: [String: Any]?
+    public let certificateRequestHeader: [String: Any]?
     public let contentId: String?
     public let certificateUrl: String?
     public let base64Certificate: Bool?
@@ -18,6 +19,7 @@ public struct DRMParams {
             self.certificateUrl = nil
             self.base64Certificate = nil
             self.headers = nil
+            self.certificateRequestHeader = nil
             self.localSourceEncryptionKeyScheme = nil
             return
         }
@@ -27,6 +29,8 @@ public struct DRMParams {
         self.contentId = json["contentId"] as? String
         self.certificateUrl = json["certificateUrl"] as? String
         self.base64Certificate = json["base64Certificate"] as? Bool
+
+
         if let headers = json["headers"] as? [[String: Any]] {
             var _headers: [String: Any] = [:]
             for header in headers {
@@ -38,6 +42,21 @@ public struct DRMParams {
         } else {
             self.headers = nil
         }
+
+
+        if let certificateRequestHeader = json["certificateRequestHeader"] as? [[String: Any]] {
+            var _certHeaders: [String: Any] = [:]
+            for header in certificateRequestHeader {
+                if let key = header["key"] as? String, let value = header["value"] {
+                    _certHeaders[key] = value
+                }
+            }
+            self.certificateRequestHeader = _certHeaders
+        } else {
+            self.certificateRequestHeader = nil
+        }
+
+
         localSourceEncryptionKeyScheme = json["localSourceEncryptionKeyScheme"] as? String
     }
 }

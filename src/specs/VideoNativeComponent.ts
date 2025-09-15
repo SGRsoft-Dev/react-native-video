@@ -18,6 +18,12 @@ type Headers = ReadonlyArray<
     value: string;
   }>
 >;
+type CertificateRequestHeader = ReadonlyArray<
+  Readonly<{
+    key: string;
+    value: string;
+  }>
+>;
 
 type VideoMetadata = Readonly<{
   title?: string;
@@ -66,6 +72,7 @@ type Drm = Readonly<{
   type?: DRMType;
   licenseServer?: string;
   headers?: Headers;
+  certificateRequestHeader?: CertificateRequestHeader;
   contentId?: string; // ios
   certificateUrl?: string; // ios
   base64Certificate?: boolean; // ios default: false

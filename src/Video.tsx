@@ -185,6 +185,7 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
               type: selectedDrm.type,
               licenseServer: selectedDrm.licenseServer,
               headers: generateHeaderForNative(selectedDrm.headers),
+              certificateRequestHeader: generateHeaderForNative(selectedDrm.certificateRequestHeader),
               contentId: selectedDrm.contentId,
               certificateUrl: selectedDrm.certificateUrl,
               base64Certificate: selectedDrm.base64Certificate,

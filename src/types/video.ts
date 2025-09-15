@@ -15,6 +15,7 @@ import type FilterType from './FilterType';
 import type ViewType from './ViewType';
 
 export type Headers = Record<string, string>;
+export type CertificateRequestHeader = Record<string, string>;
 
 export type EnumValues<T extends string | number> = T extends string
   ? `${T}` | T
@@ -88,6 +89,7 @@ export type Drm = Readonly<{
   headers?: Headers;
   contentId?: string; // ios
   certificateUrl?: string; // ios
+  certificateRequestHeader?: CertificateRequestHeader; // ios
   base64Certificate?: boolean; // ios default: false
   multiDrm?: boolean; // android
   localSourceEncryptionKeyScheme?: string; // ios

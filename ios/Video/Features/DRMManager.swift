@@ -21,22 +21,22 @@ class DRMManager: NSObject, DRMManagerSpec {
 
     override init() {
         #if targetEnvironment(simulator)
-            contentKeySession = nil
-            super.init()
+        contentKeySession = nil
+        super.init()
         #else
-            contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
-            super.init()
+        contentKeySession = AVContentKeySession(keySystem: .fairPlayStreaming)
+        super.init()
 
-            contentKeySession?.setDelegate(self, queue: DRMManager.queue)
+        contentKeySession?.setDelegate(self, queue: DRMManager.queue)
         #endif
     }
 
     func createContentKeyRequest(
-        asset: AVContentKeyRecipient,
-        drmParams: DRMParams?,
-        reactTag: NSNumber?,
-        onVideoError: RCTDirectEventBlock?,
-        onGetLicense: RCTDirectEventBlock?
+    asset: AVContentKeyRecipient,
+    drmParams: DRMParams?,
+    reactTag: NSNumber?,
+    onVideoError: RCTDirectEventBlock?,
+    onGetLicense: RCTDirectEventBlock?
     ) {
         self.reactTag = reactTag
         self.onVideoError = onVideoError
@@ -52,11 +52,11 @@ class DRMManager: NSObject, DRMManagerSpec {
         }
 
         #if targetEnvironment(simulator)
-            DebugLog("Simulator is not supported for FairPlay DRM.")
-            self.onVideoError?([
-                "error": RCTVideoErrorHandler.createError(from: RCTVideoError.simulatorDRMNotSupported),
-                "target": self.reactTag as Any,
-            ])
+        DebugLog("Simulator is not supported for FairPlay DRM.")
+        self.onVideoError?([
+            "error": RCTVideoErrorHandler.createError(from: RCTVideoError.simulatorDRMNotSupported),
+            "target": self.reactTag as Any,
+        ])
         #endif
 
         contentKeySession?.addContentKeyRecipient(asset)
@@ -69,10 +69,10 @@ class DRMManager: NSObject, DRMManagerSpec {
             do {
                 if drmParams?.localSourceEncryptionKeyScheme != nil {
                     #if os(iOS)
-                        try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
-                        return
+                    try keyRequest.respondByRequestingPersistableContentKeyRequestAndReturnError()
+                    return
                     #else
-                        throw RCTVideoError.offlineDRMNotSupported
+                    throw RCTVideoError.offlineDRMNotSupported
                     #endif
                 }
 
@@ -126,7 +126,7 @@ class DRMManager: NSObject, DRMManagerSpec {
 
     private func processContentKeyRequest(keyRequest: AVContentKeyRequest) async throws {
         guard let assetId = getAssetId(keyRequest: keyRequest),
-              let assetIdData = assetId.data(using: .utf8) else {
+        let assetIdData = assetId.data(using: .utf8) else {
             throw RCTVideoError.invalidContentId
         }
 
@@ -149,8 +149,8 @@ class DRMManager: NSObject, DRMManagerSpec {
 
         var request = URLRequest(url: url)
 
-        if let headers = drmParams?.headers {
-            for (key, value) in headers {
+        if let headers = drmParams?.certificateRequestHeader {
+            for (key, value) in certificateRequestHeader {
                 if let stringValue = value as? String {
                     request.setValue(stringValue, forHTTPHeaderField: key)
                 }
@@ -176,7 +176,7 @@ class DRMManager: NSObject, DRMManagerSpec {
 
     private func requestLicense(spcData: Data) async throws -> Data {
         guard let licenseServerUrlString = drmParams?.licenseServer,
-              let licenseServerUrl = URL(string: licenseServerUrlString) else {
+        let licenseServerUrl = URL(string: licenseServerUrlString) else {
             throw RCTVideoError.noLicenseServerURL
         }
 
