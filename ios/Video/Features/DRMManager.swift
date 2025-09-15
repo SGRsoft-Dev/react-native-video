@@ -149,7 +149,7 @@ class DRMManager: NSObject, DRMManagerSpec {
 
         var request = URLRequest(url: url)
 
-        if let headers = drmParams?.certificateRequestHeader {
+        if let certificateRequestHeader = drmParams?.certificateRequestHeader {
             for (key, value) in certificateRequestHeader {
                 if let stringValue = value as? String {
                     request.setValue(stringValue, forHTTPHeaderField: key)
