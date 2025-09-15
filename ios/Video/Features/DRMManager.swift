@@ -143,14 +143,24 @@ class DRMManager: NSObject, DRMManagerSpec {
 
     private func requestApplicationCertificate() async throws -> Data {
         guard let urlString = drmParams?.certificateUrl,
-              let url = URL(string: urlString) else {
+        let url = URL(string: urlString) else {
             throw RCTVideoError.noCertificateURL
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+
+        if let headers = drmParams?.headers {
+            for (key, value) in headers {
+                if let stringValue = value as? String {
+                    request.setValue(stringValue, forHTTPHeaderField: key)
+                }
+            }
+        }
+
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
+        httpResponse.statusCode == 200 else {
             throw RCTVideoError.noCertificateData
         }
 
