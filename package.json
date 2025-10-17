@@ -70,5 +70,6 @@
         "!**/*.tsbuildinfo",
         "!docs",
         "!examples"
-    ]
+    ],
+    "packageManager": "yarn@4.9.4+sha256.516deeeced90791213ddcffc8d6712fcea7adff3e8d9879804284ba713462ce2"
 }
