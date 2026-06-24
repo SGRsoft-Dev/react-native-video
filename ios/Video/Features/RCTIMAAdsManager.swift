@@ -10,6 +10,12 @@
         private var adsLoader: IMAAdsLoader!
         /* Main point of interaction with the SDK. Created by the SDK as the result of an ad request. */
         private var adsManager: IMAAdsManager!
+        /* View that hosts the IMA-rendered ad UI (incl. tvOS skip button). Kept so tvOS can
+           redirect focus into it during ad playback. */
+        private var adContainerView: UIView?
+        /* Display container created per ad request. Exposes `focusEnvironment` — the IMA-provided
+           focus target for the current ad break (skip/More buttons). Used for tvOS focus routing. */
+        private var adDisplayContainer: IMAAdDisplayContainer?
 
         init(video: RCTVideo!, isPictureInPictureActive: @escaping () -> Bool) {
             _video = video
@@ -34,9 +40,13 @@
             let adContainerView = UIView(frame: _video.bounds)
             adContainerView.backgroundColor = .clear
             _video.addSubview(adContainerView)
+            // Keep a reference so tvOS can move focus into the IMA ad UI (skip button).
+            self.adContainerView = adContainerView
 
             // Create ad display container for ad rendering.
             let adDisplayContainer = IMAAdDisplayContainer(adContainer: adContainerView, viewController: _video.reactViewController())
+            // Keep it so tvOS can route focus to IMA's own ad-break focus environment (skip/More).
+            self.adDisplayContainer = adDisplayContainer
 
             let adTagUrl = _video.getAdTagUrl()
             let contentPlayhead = _video.getContentPlayhead()
@@ -55,6 +65,9 @@
         }
 
         func releaseAds() {
+            adContainerView?.removeFromSuperview()
+            adContainerView = nil
+            adDisplayContainer = nil
             guard let adsManager else { return }
             // Destroy AdsManager may be delayed for a few milliseconds
             // But what we want is it stopped producing sound immediately
@@ -62,6 +75,17 @@
             adsManager.volume = 0
             adsManager.pause()
             adsManager.destroy()
+        }
+
+        // View hosting the IMA ad UI — used by tvOS to redirect focus to the skip button.
+        func getAdContainerView() -> UIView? {
+            return adContainerView
+        }
+
+        // IMA-provided focus target for the current ad break (skip/More buttons). Preferred over
+        // the raw container view so tvOS focus lands on IMA's own interactive ad UI. nil when no ad.
+        func getAdFocusEnvironment() -> UIFocusEnvironment? {
+            return adDisplayContainer?.focusEnvironment
         }
 
         // MARK: - Getters
@@ -86,6 +110,8 @@
             let adsRenderingSettings = IMAAdsRenderingSettings()
             adsRenderingSettings.linkOpenerDelegate = self
             adsRenderingSettings.linkOpenerPresentingController = _video.reactViewController()
+            // NOTE: uiElements를 [COUNTDOWN]으로 제한하면 tvOS에서 스킵 버튼 UI까지 사라진다.
+            // 따라서 attribution 제한은 하지 않고, 'Why This Ad' 버튼만 뷰 트리에서 직접 숨긴다.
 
             adsManager.initialize(with: adsRenderingSettings)
         }
@@ -113,6 +139,21 @@
                 }
                 adsManager.start()
             }
+
+            #if os(tvOS)
+                // Move focus into the IMA ad UI so the remote can operate the skip button.
+                if event.type == IMAAdEventType.STARTED || event.type == IMAAdEventType.RESUME {
+                    _video.updateAdFocus()
+                }
+                // AdChoices/'About this ad' icon tapped → IMA pauses the ad and shows a fallback
+                // (QR) modal. When that modal closes, IMA does NOT auto-resume on tvOS and focus is
+                // lost, leaving the ad frozen with a dead remote. Resume the ad (countdown/skip
+                // continues) and route focus back into the ad UI.
+                if event.type == IMAAdEventType.ICON_FALLBACK_IMAGE_CLOSED {
+                    adsManager.resume()
+                    _video.updateAdFocus()
+                }
+            #endif
 
             if _video.onReceiveAdEvent != nil {
                 let type = convertEventToString(event: event.type)
@@ -170,7 +211,13 @@
         // MARK: - IMALinkOpenerDelegate
 
         func linkOpenerDidClose(inAppLink _: NSObject) {
+            // tvOS '광고 정보'(클릭연결/AdChoices) 모달이 닫힌 직후: 광고를 재개해 카운트다운이
+            // 다시 흐르게 하고, 포커스를 광고 컨테이너로 되돌려 리모컨으로 스킵이 가능하도록 한다.
+            // (포커스를 복귀시키지 않으면 모달이 닫힌 뒤 포커스가 사라져 멈춤/뒤로가기 불가가 됨)
             adsManager?.resume()
+            #if os(tvOS)
+                _video?.updateAdFocus()
+            #endif
         }
 
         // MARK: - Helpers
@@ -199,6 +246,10 @@
                 result = "CUEPOINTS_CHANGED"
             case .FIRST_QUARTILE:
                 result = "FIRST_QUARTILE"
+            case .ICON_TAPPED:
+                result = "ICON_TAPPED"
+            case .ICON_FALLBACK_IMAGE_CLOSED:
+                result = "ICON_FALLBACK_IMAGE_CLOSED"
             case .LOADED:
                 result = "LOADED"
             case .LOG:

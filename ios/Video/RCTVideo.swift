@@ -1363,7 +1363,44 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
     #endif
     func setAdPlaying(_ adPlaying: Bool) {
         _adPlaying = adPlaying
+        #if os(tvOS)
+            // tvOS: when an ad starts/ends, move focus into (or out of) the IMA ad UI so the
+            // remote can operate the skip button. preferredFocusEnvironments (below) does the routing.
+            updateAdFocus()
+        #endif
     }
+
+    #if os(tvOS)
+        // Route focus to the IMA ad container while an ad is playing so its skip button is
+        // reachable by the remote; otherwise fall back to the default environments.
+        override var preferredFocusEnvironments: [UIFocusEnvironment] {
+            #if USE_GOOGLE_IMA
+                if _adPlaying {
+                    // Prefer IMA's own ad-break focus environment (skip/More buttons); fall back to
+                    // the raw container view if the SDK hasn't published one yet.
+                    if let adFocus = _imaAdsManager?.getAdFocusEnvironment() {
+                        return [adFocus]
+                    }
+                    if let adContainer = _imaAdsManager?.getAdContainerView() {
+                        return [adContainer]
+                    }
+                }
+            #endif
+            return super.preferredFocusEnvironments
+        }
+
+        func updateAdFocus() {
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.setNeedsFocusUpdate()
+                self.updateFocusIfNeeded()
+                if let vc = self.reactViewController() {
+                    vc.setNeedsFocusUpdate()
+                    vc.updateFocusIfNeeded()
+                }
+            }
+        }
+    #endif
 
     // MARK: - React View Management
 
