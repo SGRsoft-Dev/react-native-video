@@ -171,8 +171,18 @@
 
             #if os(tvOS)
                 // Move focus into the IMA ad UI so the remote can operate the skip button.
+                // 주의: skippable 광고의 Skip 버튼은 skip offset(보통 5초)에 도달해야 비로소
+                // 포커스 가능한 인터랙티브 요소가 된다. STARTED 한 번만 포커스를 걸면 그 시점엔
+                // Skip이 아직 비활성이라 포커스가 광고 UI(Skip 버튼)에 붙지 못하고, 이후 Skip이
+                // 활성화돼도 재호출이 없어 리모컨이 Skip에 닿지 못한다. 그래서 'Why This Ad' recolor와
+                // 동일하게 등장/활성 타이밍에 맞춰 staggered 지연으로 포커스를 여러 번 재요청한다.
                 if event.type == IMAAdEventType.STARTED || event.type == IMAAdEventType.RESUME {
                     _video.updateAdFocus()
+                    for delay in [0.1, 0.4, 0.9, 1.5, 3.0, 5.2, 6.0] {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                            self?._video?.updateAdFocus()
+                        }
+                    }
                 }
                 // tvOS: 'Why This Ad'(AdChoices) 버튼은 이 광고에서 흰 배경 + 흰 아이콘이라 빈 흰
                 // 원처럼 보인다. 숨기거나 다른 UI는 건드리지 않고, 그 버튼 내부 아이콘/텍스트 색만
