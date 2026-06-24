@@ -88,6 +88,35 @@
             return adDisplayContainer?.focusEnvironment
         }
 
+        #if os(tvOS)
+            // tvOS: recolor IMA's 'Why This Ad' (AdChoices) button content to black so its
+            // white-on-white icon/text is visible. Scoped strictly to that button's subtree —
+            // nothing else (skip button etc.) is touched.
+            private func recolorWhyThisAdButton(in view: UIView) {
+                for sub in view.subviews {
+                    if let label = sub.accessibilityLabel,
+                       label.range(of: "Why This Ad", options: .caseInsensitive) != nil,
+                       sub.frame.width <= 120, sub.frame.height <= 120 {
+                        applyBlackContent(to: sub)
+                    } else {
+                        recolorWhyThisAdButton(in: sub)
+                    }
+                }
+            }
+
+            private func applyBlackContent(to view: UIView) {
+                view.tintColor = .black
+                if let imageView = view as? UIImageView {
+                    imageView.image = imageView.image?.withRenderingMode(.alwaysTemplate)
+                    imageView.tintColor = .black
+                }
+                if let label = view as? UILabel {
+                    label.textColor = .black
+                }
+                for sub in view.subviews { applyBlackContent(to: sub) }
+            }
+        #endif
+
         // MARK: - Getters
 
         func getAdsLoader() -> IMAAdsLoader? {
@@ -144,6 +173,19 @@
                 // Move focus into the IMA ad UI so the remote can operate the skip button.
                 if event.type == IMAAdEventType.STARTED || event.type == IMAAdEventType.RESUME {
                     _video.updateAdFocus()
+                }
+                // tvOS: 'Why This Ad'(AdChoices) 버튼은 이 광고에서 흰 배경 + 흰 아이콘이라 빈 흰
+                // 원처럼 보인다. 숨기거나 다른 UI는 건드리지 않고, 그 버튼 내부 아이콘/텍스트 색만
+                // 검정으로 바꿔 보이게 한다. 등장 타이밍이 일정치 않아 여러 번 + 매 이벤트마다 재적용.
+                if event.type == IMAAdEventType.STARTED, let container = adContainerView {
+                    for delay in [0.1, 0.4, 0.9, 1.5] {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                            self?.recolorWhyThisAdButton(in: container)
+                        }
+                    }
+                }
+                if let container = adContainerView {
+                    recolorWhyThisAdButton(in: container)
                 }
                 // AdChoices/'About this ad' icon tapped → IMA pauses the ad and shows a fallback
                 // (QR) modal. When that modal closes, IMA does NOT auto-resume on tvOS and focus is
