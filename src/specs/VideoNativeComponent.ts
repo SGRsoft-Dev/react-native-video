@@ -59,7 +59,7 @@ export type VideoSrc = Readonly<{
   ad?: AdsConfig;
   minLoadRetryCount?: Int32; // Android
   bufferConfig?: BufferConfig; // Android
-  queryToken?: string; // Android
+  queryToken?: string;
 }>;
 
 type DRMType = WithDefault<string, 'widevine'>;

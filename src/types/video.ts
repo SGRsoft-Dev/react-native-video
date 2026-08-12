@@ -49,9 +49,12 @@ export type ReactVideoSourceProperties = {
    *
    * HLS/DASH child URIs resolve relatively to the manifest and RFC 3986 drops the base
    * query, so a token placed on the manifest URL alone never reaches the segments.
-   * Use this when the CDN validates a token on every request. Android only.
+   * Use this when the CDN validates a token on every request.
+   *
+   * Android rewrites requests through a media3 ResolvingDataSource; iOS intercepts the
+   * playlists with an AVAssetResourceLoader and rewrites the URIs inside them.
    */
-  queryToken?: string; // Android
+  queryToken?: string;
 };
 
 export type ReactVideoSource = Readonly<

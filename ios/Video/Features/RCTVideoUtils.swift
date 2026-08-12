@@ -379,7 +379,23 @@ enum RCTVideoUtils {
             }
             let cookies: [AnyObject]! = HTTPCookieStorage.shared.cookies
             assetOptions.setObject(cookies as Any, forKey: AVURLAssetHTTPCookiesKey as NSCopying)
-            asset = AVURLAsset(url: url, options: assetOptions as? [String: Any])
+
+            // A query token has to be re-applied to every request; AVPlayer only exposes the
+            // resource loader, which fires for custom schemes. See RNVQueryTokenResourceLoader.
+            if let loader = RNVQueryTokenResourceLoader(
+                token: source.queryToken,
+                headers: source.requestHeaders as? [String: Any]
+            ) {
+                asset = AVURLAsset(
+                    url: RNVQueryTokenResourceLoader.markURL(url),
+                    options: assetOptions as? [String: Any]
+                )
+                asset.resourceLoader.setDelegate(loader, queue: RNVQueryTokenResourceLoader.queue)
+                // the delegate is only weakly held by the loader, keep it alive with the asset
+                objc_setAssociatedObject(asset as Any, &RNVQueryTokenResourceLoader.assetKey, loader, .OBJC_ASSOCIATION_RETAIN)
+            } else {
+                asset = AVURLAsset(url: url, options: assetOptions as? [String: Any])
+            }
         } else {
             asset = AVURLAsset(url: url)
         }

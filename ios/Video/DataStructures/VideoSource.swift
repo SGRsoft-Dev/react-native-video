@@ -5,6 +5,10 @@ public struct VideoSource {
     let isAsset: Bool
     let shouldCache: Bool
     let requestHeaders: [String: Any]?
+    /// Raw `key=value` query appended to every request (manifest, sub-playlists, segments, keys).
+    /// HLS child URIs resolve relatively and RFC 3986 drops the base query, so a token on the
+    /// manifest URL alone never reaches the segments.
+    let queryToken: String?
     let startPosition: Float64?
     let cropStart: Int64?
     let cropEnd: Int64?
@@ -25,6 +29,7 @@ public struct VideoSource {
             self.isAsset = false
             self.shouldCache = false
             self.requestHeaders = nil
+            self.queryToken = nil
             self.startPosition = nil
             self.cropStart = nil
             self.cropEnd = nil
@@ -50,6 +55,7 @@ public struct VideoSource {
         } else {
             self.requestHeaders = nil
         }
+        self.queryToken = json["queryToken"] as? String
         self.startPosition = json["startPosition"] as? Float64
         self.cropStart = (json["cropStart"] as? Float64).flatMap { Int64(round($0)) }
         self.cropEnd = (json["cropEnd"] as? Float64).flatMap { Int64(round($0)) }
