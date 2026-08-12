@@ -1,6 +1,6 @@
 {
     "name": "@sgrsoft/react-native-video",
-    "version": "6.16.1-sgrsoft.10",
+    "version": "6.16.1-sgrsoft.11",
     "description": "A <Video /> element for react-native",
     "publishConfig": {
         "access": "public"
