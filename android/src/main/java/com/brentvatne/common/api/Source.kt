@@ -61,6 +61,15 @@ class Source {
     val headers: MutableMap<String, String> = HashMap()
 
     /**
+     * Query string appended to every request of this source (manifest, sub-playlists,
+     * segments, keys). Format is a raw `key=value` pair, e.g. `livestation=abc`.
+     *
+     * HLS/DASH child URIs are resolved relatively, so a query on the manifest URL is not
+     * inherited by segments. CDNs that validate a token on every request need this.
+     */
+    var queryToken: String? = null
+
+    /**
      * DRM properties linked to the source
      */
     var drmProps: DRMProps? = null
@@ -90,7 +99,8 @@ class Source {
      */
     var sideLoadedTextTracks: SideLoadedTextTrackList? = null
 
-    override fun hashCode(): Int = Objects.hash(uriString, uri, startPositionMs, cropStartMs, cropEndMs, extension, metadata, headers)
+    override fun hashCode(): Int =
+        Objects.hash(uriString, uri, startPositionMs, cropStartMs, cropEndMs, extension, metadata, headers, queryToken)
 
     /** return true if this and src are equals  */
     override fun equals(other: Any?): Boolean {
@@ -109,6 +119,7 @@ class Source {
                 minLoadRetryCount == other.minLoadRetryCount &&
                 isLocalAssetFile == other.isLocalAssetFile &&
                 isAsset == other.isAsset &&
+                queryToken == other.queryToken &&
                 bufferConfig == other.bufferConfig
             )
     }
@@ -174,6 +185,7 @@ class Source {
         private const val PROP_SRC_TYPE = "type"
         private const val PROP_SRC_METADATA = "metadata"
         private const val PROP_SRC_HEADERS = "requestHeaders"
+        private const val PROP_SRC_QUERY_TOKEN = "queryToken"
         private const val PROP_SRC_DRM = "drm"
         private const val PROP_SRC_CMCD = "cmcd"
         private const val PROP_SRC_ADS = "ad"
@@ -249,6 +261,7 @@ class Source {
                 source.sideLoadedTextTracks = SideLoadedTextTrackList.parse(safeGetArray(src, PROP_SRC_TEXT_TRACKS))
                 source.minLoadRetryCount = safeGetInt(src, PROP_SRC_MIN_LOAD_RETRY_COUNT, 3)
                 source.bufferConfig = BufferConfig.parse(safeGetMap(src, PROP_SRC_BUFFER_CONFIG))
+                source.queryToken = safeGetString(src, PROP_SRC_QUERY_TOKEN, null)
 
                 val propSrcHeadersArray = safeGetArray(src, PROP_SRC_HEADERS)
                 if (propSrcHeadersArray != null) {

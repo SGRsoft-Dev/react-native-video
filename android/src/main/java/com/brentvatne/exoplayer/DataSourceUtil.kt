@@ -7,6 +7,7 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.HttpDataSource
+import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import com.facebook.react.bridge.ReactContext
@@ -76,6 +77,31 @@ object DataSourceUtil {
         }
 
         return okHttpDataSourceFactory
+    }
+
+    /**
+     * Appends a raw `key=value` query token to every request made through [factory].
+     *
+     * HLS/DASH child URIs (sub-playlists, segments, keys) are resolved relatively to the
+     * manifest, and RFC 3986 relative resolution drops the base query. CDNs that validate a
+     * token on every request therefore need it re-applied per request, which is what
+     * [ResolvingDataSource] is for.
+     */
+    @JvmStatic
+    fun withQueryToken(factory: DataSource.Factory, token: String?): DataSource.Factory {
+        val normalized = token?.trimStart('?', '&')?.trim().orEmpty()
+        if (normalized.isEmpty()) return factory
+        return ResolvingDataSource.Factory(factory) { dataSpec ->
+            dataSpec.withUri(appendQueryToken(dataSpec.uri, normalized))
+        }
+    }
+
+    private fun appendQueryToken(uri: Uri, token: String): Uri {
+        val query = uri.encodedQuery
+        // already carries this token (e.g. the manifest URL built on the JS side)
+        if (query != null && query.contains(token)) return uri
+        val merged = if (query.isNullOrEmpty()) token else "$query&$token"
+        return uri.buildUpon().encodedQuery(merged).build()
     }
 
     @JvmStatic

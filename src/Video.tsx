@@ -256,6 +256,7 @@ const Video = forwardRef<VideoRef, ReactVideoProps>(
             resolvedSource.textTracksAllowChunklessPreparation,
           minLoadRetryCount: _minLoadRetryCount,
           bufferConfig: _bufferConfig,
+          queryToken: resolvedSource.queryToken,
         };
       },
       [

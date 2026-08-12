@@ -1364,8 +1364,10 @@ public class ReactExoplayerView extends FrameLayout implements
      * @return A new DataSource factory.
      */
     private DataSource.Factory buildDataSourceFactory(boolean useBandwidthMeter) {
-        return DataSourceUtil.getDefaultDataSourceFactory(this.themedReactContext,
-                useBandwidthMeter ? bandwidthMeter : null, source.getHeaders());
+        return DataSourceUtil.withQueryToken(
+                DataSourceUtil.getDefaultDataSourceFactory(this.themedReactContext,
+                        useBandwidthMeter ? bandwidthMeter : null, source.getHeaders()),
+                source.getQueryToken());
     }
 
     /**
@@ -2023,7 +2025,10 @@ public class ReactExoplayerView extends FrameLayout implements
             @Nullable
             final DataSource.Factory overriddenMediaDataSourceFactory = ReactNativeVideoManager.Companion.getInstance().overrideMediaDataSourceFactory(source, tmpMediaDataSourceFactory);
 
-            this.mediaDataSourceFactory = Objects.requireNonNullElse(overriddenMediaDataSourceFactory, tmpMediaDataSourceFactory);
+            // every request of this source (manifest, sub-playlists, segments, keys) carries the token
+            this.mediaDataSourceFactory = DataSourceUtil.withQueryToken(
+                    Objects.requireNonNullElse(overriddenMediaDataSourceFactory, tmpMediaDataSourceFactory),
+                    source.getQueryToken());
 
             if (source.getCmcdProps() != null) {
                 CMCDConfig cmcdConfig = new CMCDConfig(source.getCmcdProps());

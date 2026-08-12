@@ -43,6 +43,15 @@ export type ReactVideoSourceProperties = {
   ad?: AdConfig;
   minLoadRetryCount?: number; // Android
   bufferConfig?: BufferConfig;
+  /**
+   * Raw `key=value` query string appended to every request of this source
+   * (manifest, sub-playlists, segments, keys).
+   *
+   * HLS/DASH child URIs resolve relatively to the manifest and RFC 3986 drops the base
+   * query, so a token placed on the manifest URL alone never reaches the segments.
+   * Use this when the CDN validates a token on every request. Android only.
+   */
+  queryToken?: string; // Android
 };
 
 export type ReactVideoSource = Readonly<
