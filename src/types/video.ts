@@ -307,7 +307,7 @@ export interface ReactVideoProps extends ReactVideoEvents, ViewProps {
   audioOutput?: AudioOutput; // Mobile
   automaticallyWaitsToMinimizeStalling?: boolean; // iOS
   /** @deprecated Use source.bufferConfig */
-  bufferConfig?: BufferConfig; // Android
+  bufferConfig?: BufferConfig; // Android, plus live.targetOffsetMs on iOS
   bufferingStrategy?: BufferingStrategyType;
   chapters?: Chapters[]; // iOS
   /** @deprecated Use source.contentStartTime */

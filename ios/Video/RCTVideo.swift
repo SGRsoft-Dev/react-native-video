@@ -562,6 +562,14 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
         _playerItem = playerItem
         _playerObserver.playerItem = _playerItem
         setPreferredForwardBufferDuration(_preferredForwardBufferDuration)
+        // Live latency. AVPlayer otherwise starts at `recommendedTimeOffsetFromLive`, which the
+        // manifest's (PART-)HOLD-BACK drives, and no seek brings it closer for long. Asking for the
+        // offset up front is stall-free, unlike pulling to the edge after playback has started.
+        // The server's HOLD-BACK is still the floor, values under it only buy stalls.
+        if let targetOffsetMs = _source?.liveTargetOffsetMs, targetOffsetMs > 0 {
+            playerItem.automaticallyPreservesTimeOffsetFromLive = true
+            playerItem.configuredTimeOffsetFromLive = CMTime(value: CMTimeValue(targetOffsetMs), timescale: 1000)
+        }
         setPlaybackRange(playerItem, withCropStart: _source?.cropStart, withCropEnd: _source?.cropEnd)
         setFilter(_filterName)
         if let maxBitRate = _maxBitRate {

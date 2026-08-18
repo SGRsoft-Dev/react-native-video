@@ -12,6 +12,11 @@ public struct VideoSource {
     let startPosition: Float64?
     let cropStart: Int64?
     let cropEnd: Int64?
+    /// `bufferConfig.live.targetOffsetMs`, shared with Android. On iOS it becomes
+    /// `AVPlayerItem.configuredTimeOffsetFromLive`: the only handle AVPlayer gives on live latency.
+    /// Seeking toward the edge does not work, the seek flushes the buffer and the player settles
+    /// back on its own `recommendedTimeOffsetFromLive`.
+    let liveTargetOffsetMs: Int?
     let customMetadata: CustomMetadata?
     /* DRM */
     let drm: DRMParams
@@ -34,6 +39,7 @@ public struct VideoSource {
             self.cropStart = nil
             self.cropEnd = nil
             self.customMetadata = nil
+            self.liveTargetOffsetMs = nil
             self.drm = DRMParams(nil)
             adParams = AdParams(nil)
             return
@@ -60,6 +66,8 @@ public struct VideoSource {
         self.cropStart = (json["cropStart"] as? Float64).flatMap { Int64(round($0)) }
         self.cropEnd = (json["cropEnd"] as? Float64).flatMap { Int64(round($0)) }
         self.customMetadata = CustomMetadata(json["metadata"] as? NSDictionary)
+        self.liveTargetOffsetMs =
+            ((json["bufferConfig"] as? NSDictionary)?["live"] as? NSDictionary)?["targetOffsetMs"] as? Int
         self.drm = DRMParams(json["drm"] as? NSDictionary)
         self.textTracks = (json["textTracks"] as? NSArray)?.map { trackDict in
             return TextTrack(trackDict as? NSDictionary)

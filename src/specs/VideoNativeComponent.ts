@@ -58,7 +58,7 @@ export type VideoSrc = Readonly<{
   textTracks?: TextTracks;
   ad?: AdsConfig;
   minLoadRetryCount?: Int32; // Android
-  bufferConfig?: BufferConfig; // Android
+  bufferConfig?: BufferConfig; // Android, plus live.targetOffsetMs on iOS
   queryToken?: string;
 }>;
 
